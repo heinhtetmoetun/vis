@@ -1,17 +1,104 @@
-export default async function Home({ params }) {
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL;
+"use client";
+import { useEffect, useState } from "react";
 
-  const data = await fetch(`${API_BASE}/product/${params.id}`, { cache: "no-store" });
-  const product = await data.json();
-  console.log({ product, category: product.category });
-  // const id = params.id;
+export default function ProductPage() {
+  const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [form, setForm] = useState({ name: "", price: "", category: "" });
+  const [editingId, setEditingId] = useState(null);
+
+  async function fetchProducts() {
+    const res = await fetch("/api/products");
+    setProducts(await res.json());
+  }
+
+  async function fetchCategories() {
+    const res = await fetch("/api/categories");
+    setCategories(await res.json());
+  }
+
+  useEffect(() => {
+    fetchProducts();
+    fetchCategories();
+  }, []);
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    if (editingId) {
+      await fetch(`/api/products/${editingId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...form, price: parseFloat(form.price) }),
+      });
+      setEditingId(null);
+    } else {
+      await fetch("/api/products", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...form, price: parseFloat(form.price) }),
+      });
+    }
+    setForm({ name: "", price: "", category: "" });
+    fetchProducts();
+  }
+
+  async function handleDelete(id) {
+    await fetch(`/api/products/${id}`, { method: "DELETE" });
+    fetchProducts();
+  }
+
+  function startEdit(p) {
+    setEditingId(p._id);
+    setForm({
+      name: p.name,
+      price: p.price,
+      category: p.category?._id || "",
+    });
+  }
+
   return (
-    <div className="m-4">
-      <h1>Product</h1>
-      <p className="font-bold text-xl text-blue-800">{product.name}</p>
-      <p>{product.description}</p>
-      <p>{product.price} Baht</p>
-      <p>Category: {product.category.name}</p>
-    </div>
+    <main className="p-6">
+      <h1 className="text-2xl font-bold mb-4">Products</h1>
+
+      <form onSubmit={handleSubmit} className="space-y-2 mb-6">
+        <input className="border p-2 w-full" placeholder="Product Name"
+          value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}/>
+        <input className="border p-2 w-full" placeholder="Price" type="number"
+          value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })}/>
+        <select className="border p-2 w-full"
+          value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>
+          <option value="">-- Select Category --</option>
+          {categories.map((c) => (
+            <option key={c._id} value={c._id}>{c.name}</option>
+          ))}
+        </select>
+        <button type="submit" className="bg-green-500 text-white px-4 py-2 rounded">
+          {editingId ? "Update Product" : "Add Product"}
+        </button>
+      </form>
+
+      <table className="w-full border">
+        <thead><tr className="bg-gray-100">
+          <th className="p-2 border">Name</th>
+          <th className="p-2 border">Price</th>
+          <th className="p-2 border">Category</th>
+          <th className="p-2 border">Actions</th>
+        </tr></thead>
+        <tbody>
+          {products.map((p) => (
+            <tr key={p._id}>
+              <td className="border p-2">{p.name}</td>
+              <td className="border p-2">{p.price}</td>
+              <td className="border p-2">{p.category?.name || "Unassigned"}</td>
+              <td className="border p-2">
+                <button onClick={() => startEdit(p)} className="text-green-600 mr-2">Edit</button>
+                <a href={`/product/${p._id}`} className="text-blue-600 mr-2">View</a>
+                <button onClick={() => handleDelete(p._id)} className="text-red-600">Delete</button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </main>
   );
 }
