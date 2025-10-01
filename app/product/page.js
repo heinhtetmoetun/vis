@@ -1,135 +1,61 @@
-"use client";
-import { useEffect, useState } from "react";
+'use client';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+
+const API = process.env.NEXT_PUBLIC_API_URL;
+const BASE = process.env.NEXT_PUBLIC_BASE_PATH || '';
 
 export default function ProductPage() {
   const [products, setProducts] = useState([]);
+  const [name, setName] = useState('');
+  const [price, setPrice] = useState('');
   const [categories, setCategories] = useState([]);
-  const [form, setForm] = useState({ name: "", price: "", category: "" });
+  const [category, setCategory] = useState('');
+  const router = useRouter();
 
-  // Fetch products
-  async function fetchProducts() {
-    const res = await fetch("/api/products");
-    const data = await res.json();
-    setProducts(data);
-  }
+  const load = async () => {
+    const res = await fetch(`${API}/products`);
+    setProducts(await res.json());
 
-  // Fetch categories
-  async function fetchCategories() {
-    const res = await fetch("/api/categories");
-    const data = await res.json();
-    setCategories(data);
-  }
+    const resCat = await fetch(`${API}/categories`);
+    setCategories(await resCat.json());
+  };
 
-  useEffect(() => {
-    fetchProducts();
-    fetchCategories();
-  }, []);
+  useEffect(() => { load(); }, []);
 
-  // Create product
-  async function handleSubmit(e) {
-    e.preventDefault();
-    if (!form.name || !form.price || !form.category) {
-      alert("Please fill all fields");
-      return;
-    }
-
-    await fetch("/api/products", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ 
-        ...form, 
-        price: parseFloat(form.price) 
-      }),
+  const addProduct = async () => {
+    await fetch(`${API}/products`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, price, category }),
     });
-
-    setForm({ name: "", price: "", category: "" });
-    fetchProducts();
-  }
-
-  // Delete product
-  async function handleDelete(id) {
-    await fetch(`/api/products/${id}`, { method: "DELETE" });
-    fetchProducts();
-  }
+    setName('');
+    setPrice('');
+    setCategory('');
+    load();
+  };
 
   return (
-    <main className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Products</h1>
+    <div>
+      <h1>Products</h1>
+      <input value={name} onChange={e => setName(e.target.value)} placeholder="Product Name" />
+      <input value={price} onChange={e => setPrice(e.target.value)} placeholder="Price" />
+      <select value={category} onChange={e => setCategory(e.target.value)}>
+        <option value="">Select Category</option>
+        {categories.map(c => (
+          <option key={c._id} value={c._id}>{c.name}</option>
+        ))}
+      </select>
+      <button onClick={addProduct}>Add Product</button>
 
-      {/* Add Form */}
-      <form onSubmit={handleSubmit} className="space-y-2 mb-6">
-        <input
-          className="border p-2 w-full"
-          placeholder="Product Name"
-          value={form.name}
-          onChange={(e) => setForm({ ...form, name: e.target.value })}
-        />
-        <input
-          className="border p-2 w-full"
-          placeholder="Price"
-          type="number"
-          value={form.price}
-          onChange={(e) => setForm({ ...form, price: e.target.value })}
-        />
-
-        {/* Dropdown for Category */}
-        <select
-          className="border p-2 w-full"
-          value={form.category}
-          onChange={(e) => setForm({ ...form, category: e.target.value })}
-        >
-          <option value="">-- Select Category --</option>
-          {categories.map((c) => (
-            <option key={c._id} value={c._id}>
-              {c.name}
-            </option>
-          ))}
-        </select>
-
-        <button
-          type="submit"
-          className="bg-green-500 text-white px-4 py-2 rounded"
-        >
-          Add Product
-        </button>
-      </form>
-
-      {/* Product List */}
-      <table className="w-full border">
-        <thead>
-          <tr className="bg-gray-100">
-            <th className="p-2 border">Name</th>
-            <th className="p-2 border">Price</th>
-            <th className="p-2 border">Category</th>
-            <th className="p-2 border">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {products.map((p) => (
-            <tr key={p._id}>
-              <td className="border p-2">{p.name}</td>
-              <td className="border p-2">{p.price}</td>
-              <td className="border p-2">
-                {p.category?.name || "Unassigned"}
-              </td>
-              <td className="border p-2">
-                <a
-                  href={`/product/${p._id}`}
-                  className="text-blue-500 mr-2"
-                >
-                  View
-                </a>
-                <button
-                  onClick={() => handleDelete(p._id)}
-                  className="text-red-500"
-                >
-                  Delete
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </main>
+      <ul>
+        {products.map(p => (
+          <li key={p._id}>
+            {p.name} - {p.price}{' '}
+            <button onClick={() => router.push(`${BASE}/product/${p._id}`)}>Edit</button>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }

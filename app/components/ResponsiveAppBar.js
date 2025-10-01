@@ -1,4 +1,4 @@
-'use client'
+'use client';
 import * as React from 'react';
 import AppBar from '@mui/material/AppBar';
 import Box from '@mui/material/Box';
@@ -15,10 +15,10 @@ import MenuItem from '@mui/material/MenuItem';
 import AdbIcon from '@mui/icons-material/Adb';
 import { useRouter } from 'next/navigation';
 
-// no DB imports here
+// ✅ Pull basePath from env (NEXT_PUBLIC_BASE_PATH=/final in .env.local)
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
 
 const settings = ['Profile', 'Account', 'Dashboard', 'Logout'];
-
 
 export default function ResponsiveAppBar() {
   const router = useRouter();
@@ -26,36 +26,26 @@ export default function ResponsiveAppBar() {
   const [anchorElNav, setAnchorElNav] = React.useState(null);
   const [anchorElUser, setAnchorElUser] = React.useState(null);
 
-  const handleOpenNavMenu = (event) => {
-    setAnchorElNav(event.currentTarget);
-  };
-  const handleOpenUserMenu = (event) => {
-    setAnchorElUser(event.currentTarget);
-  };
+  const handleOpenNavMenu = (event) => setAnchorElNav(event.currentTarget);
+  const handleOpenUserMenu = (event) => setAnchorElUser(event.currentTarget);
 
-  const handleCloseNavMenu = () => {
-    setAnchorElNav(null);
-  };
-
-  const handleCloseUserMenu = () => {
-    setAnchorElUser(null);
-  };
+  const handleCloseNavMenu = () => setAnchorElNav(null);
+  const handleCloseUserMenu = () => setAnchorElUser(null);
 
   return (
     <AppBar position="static">
       <Container maxWidth="xl">
         <Toolbar disableGutters>
+          {/* Logo + Home */}
           <AdbIcon sx={{ display: { xs: 'none', md: 'flex' }, mr: 1 }} />
           <Button
             key="home"
-            onClick={() => router.push('/')}
+            onClick={() => router.push(`${basePath}/`)}
             sx={{ my: 2, color: 'white', display: 'block' }}
           >
             <Typography
               variant="h6"
               noWrap
-              component="a"
-              href="#"
               sx={{
                 mr: 2,
                 display: { xs: 'none', md: 'flex' },
@@ -70,13 +60,11 @@ export default function ResponsiveAppBar() {
             </Typography>
           </Button>
 
-          {/* Mobile Menu (Hamburger) */}
+          {/* Mobile Menu */}
           <Box sx={{ flexGrow: 1, display: { xs: 'flex', md: 'none' } }}>
             <IconButton
               size="large"
               aria-label="menu"
-              aria-controls="menu-appbar"
-              aria-haspopup="true"
               onClick={handleOpenNavMenu}
               color="inherit"
             >
@@ -85,71 +73,43 @@ export default function ResponsiveAppBar() {
             <Menu
               id="menu-appbar"
               anchorEl={anchorElNav}
-              anchorOrigin={{
-                vertical: 'bottom',
-                horizontal: 'left',
-              }}
-              keepMounted
-              transformOrigin={{
-                vertical: 'top',
-                horizontal: 'left',
-              }}
               open={Boolean(anchorElNav)}
               onClose={handleCloseNavMenu}
+              anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+              transformOrigin={{ vertical: 'top', horizontal: 'left' }}
               sx={{ display: { xs: 'block', md: 'none' } }}
             >
-              <MenuItem key="products" onClick={() => router.push('/product')}>
-                <Typography sx={{ textAlign: 'center' }}>Products</Typography>
+              <MenuItem onClick={() => router.push(`${basePath}/product`)}>
+                <Typography>Products</Typography>
               </MenuItem>
-              <MenuItem key="categories" onClick={() => router.push('/category')}>
-                <Typography sx={{ textAlign: 'center' }}>Categories</Typography>
+              <MenuItem onClick={() => router.push(`${basePath}/category`)}>
+                <Typography>Categories</Typography>
               </MenuItem>
-              <MenuItem key="customers" onClick={() => router.push('/customer')}>
-                <Typography sx={{ textAlign: 'center' }}>Customers</Typography>
+              <MenuItem onClick={() => router.push(`${basePath}/customer`)}>
+                <Typography>Customers</Typography>
               </MenuItem>
             </Menu>
           </Box>
-
-          {/* Logo for mobile */}
-          <AdbIcon sx={{ display: { xs: 'flex', md: 'none' }, mr: 1 }} />
-          <Typography
-            variant="h5"
-            noWrap
-            component="a"
-            href="#"
-            sx={{
-              mr: 2,
-              display: { xs: 'flex', md: 'none' },
-              flexGrow: 1,
-              fontFamily: 'monospace',
-              fontWeight: 700,
-              letterSpacing: '.3rem',
-              color: 'inherit',
-              textDecoration: 'none',
-            }}
-          >
-            LOGO
-          </Typography>
 
           {/* Desktop Menu */}
           <Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' } }}>
             <Button
               key="products"
-              onClick={() => router.push('/product')}
+              onClick={() => router.push(`${basePath}/product`)}
               sx={{ my: 2, color: 'white', display: 'block' }}
             >
               Products
             </Button>
             <Button
               key="categories"
-              onClick={() => router.push('/category')}
+              onClick={() => router.push(`${basePath}/category`)}
               sx={{ my: 2, color: 'white', display: 'block' }}
             >
               Categories
             </Button>
             <Button
               key="customers"
-              onClick={() => router.push('/customer')}
+              onClick={() => router.push(`${basePath}/customer`)}
               sx={{ my: 2, color: 'white', display: 'block' }}
             >
               Customers
@@ -167,17 +127,10 @@ export default function ResponsiveAppBar() {
               sx={{ mt: '45px' }}
               id="menu-appbar"
               anchorEl={anchorElUser}
-              anchorOrigin={{
-                vertical: 'top',
-                horizontal: 'right',
-              }}
-              keepMounted
-              transformOrigin={{
-                vertical: 'top',
-                horizontal: 'right',
-              }}
               open={Boolean(anchorElUser)}
               onClose={handleCloseUserMenu}
+              anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+              transformOrigin={{ vertical: 'top', horizontal: 'right' }}
             >
               {settings.map((setting) => (
                 <MenuItem key={setting} onClick={handleCloseUserMenu}>

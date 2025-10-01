@@ -1,71 +1,46 @@
-"use client";
-import { useEffect, useState } from "react";
+'use client';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+
+const API = process.env.NEXT_PUBLIC_API_URL;
+const BASE = process.env.NEXT_PUBLIC_BASE_PATH || '';
 
 export default function CategoryPage() {
   const [categories, setCategories] = useState([]);
-  const [form, setForm] = useState({ name: "" });
-  const [editingId, setEditingId] = useState(null);
+  const [name, setName] = useState('');
+  const router = useRouter();
 
-  async function fetchCategories() {
-    const res = await fetch("/api/categories");
-    setCategories(await res.json());
-  }
+  const load = async () => {
+    const res = await fetch(`${API}/categories`);
+    const data = await res.json();
+    setCategories(data);
+  };
 
-  useEffect(() => { fetchCategories(); }, []);
+  useEffect(() => { load(); }, []);
 
-  async function handleSubmit(e) {
-    e.preventDefault();
-    if (editingId) {
-      await fetch(`/api/categories/${editingId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
-      setEditingId(null);
-    } else {
-      await fetch("/api/categories", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
-    }
-    setForm({ name: "" });
-    fetchCategories();
-  }
-
-  async function handleDelete(id) {
-    await fetch(`/api/categories/${id}`, { method: "DELETE" });
-    fetchCategories();
-  }
-
-  function startEdit(c) {
-    setEditingId(c._id);
-    setForm({ name: c.name });
-  }
+  const addCategory = async () => {
+    await fetch(`${API}/categories`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name }),
+    });
+    setName('');
+    load();
+  };
 
   return (
-    <main className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Categories</h1>
-
-      <form onSubmit={handleSubmit} className="space-y-2 mb-6">
-        <input className="border p-2 w-full" placeholder="Category Name"
-          value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}/>
-        <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded">
-          {editingId ? "Update Category" : "Add Category"}
-        </button>
-      </form>
-
+    <div>
+      <h1>Categories</h1>
+      <input value={name} onChange={e => setName(e.target.value)} placeholder="Category Name" />
+      <button onClick={addCategory}>Add Category</button>
       <ul>
-        {categories.map((c) => (
-          <li key={c._id} className="flex justify-between border-b p-2">
-            <span>{c.name}</span>
-            <div>
-              <button onClick={() => startEdit(c)} className="text-green-600 mr-2">Edit</button>
-              <button onClick={() => handleDelete(c._id)} className="text-red-600">Delete</button>
-            </div>
+        {categories.map(c => (
+          <li key={c._id}>
+            {c.name}{' '}
+            <button onClick={() => router.push(`${BASE}/category/${c._id}`)}>Edit</button>
           </li>
         ))}
       </ul>
-    </main>
+    </div>
   );
 }
