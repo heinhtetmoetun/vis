@@ -10,8 +10,7 @@ export async function GET() {
 
 export async function POST(req) {
   await dbConnect();
-  const data = await req.json();
-  const category = new Category(data);
-  await category.save();
-  return NextResponse.json(category, { status: 201 });
+  const body = await req.json();
+  const category = await Category.create(body);
+  return NextResponse.json(category);
 }

@@ -1,46 +1,73 @@
 'use client';
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-
-const API = process.env.NEXT_PUBLIC_API_URL;
-const BASE = process.env.NEXT_PUBLIC_BASE_PATH || '';
+import { useEffect, useState } from "react";
 
 export default function CustomerPage() {
   const [customers, setCustomers] = useState([]);
-  const [form, setForm] = useState({ name: '', email: '', phone: '', address: '' });
-  const router = useRouter();
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
 
-  const load = async () => {
-    const res = await fetch(`${API}/customers`);
+  useEffect(() => { fetchCustomers(); }, []);
+
+  async function fetchCustomers() {
+    const res = await fetch("/api/customers");
     setCustomers(await res.json());
-  };
+  }
 
-  useEffect(() => { load(); }, []);
-
-  const addCustomer = async () => {
-    await fetch(`${API}/customers`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form),
+  async function addCustomer() {
+    await fetch("/api/customers", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, email }),
     });
-    setForm({ name: '', email: '', phone: '', address: '' });
-    load();
-  };
+    setName(""); setEmail("");
+    fetchCustomers();
+  }
+
+  async function deleteCustomer(id) {
+    await fetch(`/api/customers/${id}`, { method: "DELETE" });
+    fetchCustomers();
+  }
+
+  async function updateCustomer(id) {
+    const newName = prompt("Enter new name:");
+    const newEmail = prompt("Enter new email:");
+    if (newName && newEmail) {
+      await fetch(`/api/customers/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newName, email: newEmail }),
+      });
+      fetchCustomers();
+    }
+  }
 
   return (
-    <div>
-      <h1>Customers</h1>
-      <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Name" />
-      <input value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} placeholder="Email" />
-      <input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} placeholder="Phone" />
-      <input value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} placeholder="Address" />
-      <button onClick={addCustomer}>Add Customer</button>
+    <div className="p-4">
+      <h1 className="font-bold text-xl">Customers</h1>
+      <input
+        className="border p-2 mr-2"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        placeholder="Name"
+      />
+      <input
+        className="border p-2 mr-2"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        placeholder="Email"
+      />
+      <button className="bg-blue-500 text-white px-4 py-2" onClick={addCustomer}>
+        Add
+      </button>
 
-      <ul>
-        {customers.map(c => (
-          <li key={c._id}>
-            {c.name} - {c.email}{' '}
-            <button onClick={() => router.push(`${BASE}/customer/${c._id}`)}>Edit</button>
+      <ul className="mt-4 space-y-2">
+        {customers.map((c) => (
+          <li key={c._id} className="flex justify-between border p-2">
+            {c.name} ({c.email})
+            <div>
+              <button onClick={() => updateCustomer(c._id)} className="mr-2 text-yellow-500">Edit</button>
+              <button onClick={() => deleteCustomer(c._id)} className="text-red-500">Delete</button>
+            </div>
           </li>
         ))}
       </ul>

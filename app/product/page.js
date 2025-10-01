@@ -1,58 +1,93 @@
 'use client';
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-
-const API = process.env.NEXT_PUBLIC_API_URL;
-const BASE = process.env.NEXT_PUBLIC_BASE_PATH || '';
+import { useEffect, useState } from "react";
 
 export default function ProductPage() {
   const [products, setProducts] = useState([]);
-  const [name, setName] = useState('');
-  const [price, setPrice] = useState('');
   const [categories, setCategories] = useState([]);
-  const [category, setCategory] = useState('');
-  const router = useRouter();
+  const [name, setName] = useState("");
+  const [price, setPrice] = useState("");
+  const [categoryId, setCategoryId] = useState("");
 
-  const load = async () => {
-    const res = await fetch(`${API}/products`);
+  useEffect(() => {
+    fetchProducts();
+    fetchCategories();
+  }, []);
+
+  async function fetchProducts() {
+    const res = await fetch("/api/products");
     setProducts(await res.json());
+  }
 
-    const resCat = await fetch(`${API}/categories`);
-    setCategories(await resCat.json());
-  };
+  async function fetchCategories() {
+    const res = await fetch("/api/categories");
+    setCategories(await res.json());
+  }
 
-  useEffect(() => { load(); }, []);
-
-  const addProduct = async () => {
-    await fetch(`${API}/products`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, price, category }),
+  async function addProduct() {
+    await fetch("/api/products", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, price, category: categoryId }),
     });
-    setName('');
-    setPrice('');
-    setCategory('');
-    load();
-  };
+    setName(""); setPrice(""); setCategoryId("");
+    fetchProducts();
+  }
+
+  async function deleteProduct(id) {
+    await fetch(`/api/products/${id}`, { method: "DELETE" });
+    fetchProducts();
+  }
+
+  async function updateProduct(id) {
+    const newName = prompt("Enter new name:");
+    const newPrice = prompt("Enter new price:");
+    if (newName && newPrice) {
+      await fetch(`/api/products/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newName, price: newPrice }),
+      });
+      fetchProducts();
+    }
+  }
 
   return (
-    <div>
-      <h1>Products</h1>
-      <input value={name} onChange={e => setName(e.target.value)} placeholder="Product Name" />
-      <input value={price} onChange={e => setPrice(e.target.value)} placeholder="Price" />
-      <select value={category} onChange={e => setCategory(e.target.value)}>
+    <div className="p-4">
+      <h1 className="font-bold text-xl">Products</h1>
+      <input
+        className="border p-2 mr-2"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        placeholder="Product name"
+      />
+      <input
+        className="border p-2 mr-2"
+        value={price}
+        onChange={(e) => setPrice(e.target.value)}
+        placeholder="Price"
+      />
+      <select
+        className="border p-2 mr-2"
+        value={categoryId}
+        onChange={(e) => setCategoryId(e.target.value)}
+      >
         <option value="">Select Category</option>
-        {categories.map(c => (
+        {categories.map((c) => (
           <option key={c._id} value={c._id}>{c.name}</option>
         ))}
       </select>
-      <button onClick={addProduct}>Add Product</button>
+      <button className="bg-blue-500 text-white px-4 py-2" onClick={addProduct}>
+        Add
+      </button>
 
-      <ul>
-        {products.map(p => (
-          <li key={p._id}>
-            {p.name} - {p.price}{' '}
-            <button onClick={() => router.push(`${BASE}/product/${p._id}`)}>Edit</button>
+      <ul className="mt-4 space-y-2">
+        {products.map((p) => (
+          <li key={p._id} className="flex justify-between border p-2">
+            {p.name} (${p.price}) — {p.category?.name}
+            <div>
+              <button onClick={() => updateProduct(p._id)} className="mr-2 text-yellow-500">Edit</button>
+              <button onClick={() => deleteProduct(p._id)} className="text-red-500">Delete</button>
+            </div>
           </li>
         ))}
       </ul>

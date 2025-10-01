@@ -1,28 +1,19 @@
 import mongoose from "mongoose";
 
-const MONGO_URI = process.env.MONGO_URI || process.env.MONGODB_URI;
+let isConnected = false;
 
-if (!MONGO_URI) {
-  throw new Error("⚠️ Please define the MONGO_URI in .env.local");
-}
+export default async function dbConnect() {
+  if (isConnected) return;
 
-let cached = global.mongoose;
-
-if (!cached) {
-  cached = global.mongoose = { conn: null, promise: null };
-}
-
-async function dbConnect() {
-  if (cached.conn) return cached.conn;
-
-  if (!cached.promise) {
-    cached.promise = mongoose.connect(MONGO_URI, {
-      bufferCommands: false,
-    }).then((mongoose) => mongoose);
+  if (!process.env.MONGO_URI) {
+    throw new Error("⚠️ MONGO_URI not defined in .env.local");
   }
 
-  cached.conn = await cached.promise;
-  return cached.conn;
+  try {
+    const conn = await mongoose.connect(process.env.MONGO_URI);
+    isConnected = conn.connections[0].readyState === 1;
+    console.log("✅ MongoDB connected");
+  } catch (err) {
+    console.error("❌ MongoDB connection error", err);
+  }
 }
-
-export default dbConnect;
